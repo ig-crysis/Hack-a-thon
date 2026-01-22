@@ -127,7 +127,7 @@ export default function DoctorPortal() {
       const { data, error } = await supabase
         .from("direct_chats")
         .select(`id, user_id, status, created_at, chat_messages (message, created_at)`)
-        .eq("status", "active")
+        .in("status", ["active", "pending"])
         .order("updated_at", { ascending: false });
 
       if (data) {

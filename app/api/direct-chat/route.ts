@@ -22,7 +22,7 @@ export async function POST(req: Request) {
       .insert({
         user_id: userId,
         question: message,
-        status: "pending",
+        status: "active",
       })
       .select()
       .single();
