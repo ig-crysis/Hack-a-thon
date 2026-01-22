@@ -1,4 +1,4 @@
-# MediConnect
+# MedSecure
 
 AI-powered healthcare platform that streamlines patient care with personalized insights, secure data management, and 24/7 support - making quality healthcare more accessible and efficient."
 
@@ -58,12 +58,6 @@ We're just getting started! Coming up:
 * Taking MediConnect worldwide with multiple languages
 * Adding support for health tracking devices
 * Building specialized tools for different medical fields
-
-
-
-## Dataset used:
-
-- https://www.kaggle.com/datasets/thedevastator/comprehensive-medical-q-a-dataset
 
 
 ## Demo credentials
