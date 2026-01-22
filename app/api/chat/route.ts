@@ -1,27 +1,11 @@
+import { NextResponse } from "next/server";
 import { OpenRouter } from "@openrouter/sdk";
 import { findSimilarQuestions } from "@/lib/embeddings";
 import { supabase } from "@/lib/supabase";
 
-// Initialize OpenRouter (server-side only)
 const openRouter = new OpenRouter({
   apiKey: process.env.OPENROUTER_API_KEY!,
-  defaultHeaders: {
-    "HTTP-Referer": "http://localhost:3000", // or your deployed URL
-    "X-Title": "Secure Telemedicine Prototype",
-  },
 });
-
-async function checkForAnswer(question: string) {
-  const { data, error } = await supabase
-    .from("conversations")
-    .select("answer")
-    .eq("question", question)
-    .limit(1)
-    .single();
-
-  if (error || !data) return null;
-  return data.answer;
-}
 
 export async function POST(req: Request) {
   try {
@@ -29,78 +13,57 @@ export async function POST(req: Request) {
     const question: string = body.message;
 
     if (!question) {
-      return new Response(
-        JSON.stringify({ error: "Message is required" }),
+      return NextResponse.json(
+        { error: "Message is required" },
         { status: 400 }
       );
     }
 
     console.log("Received question:", question);
 
-    // 1️⃣ NLP semantic retrieval (AI decision support)
-    const similarQuestion = await findSimilarQuestions(question);
-    if (similarQuestion) {
-      return new Response(
-        JSON.stringify({
-          response: similarQuestion.answer,
-          source: "semantic_retrieval",
-        }),
-        { status: 200 }
-      );
+    // 1️⃣ Check vector DB (previous staff answers)
+    const similar = await findSimilarQuestions(question);
+    if (similar) {
+      return NextResponse.json({
+        response: similar.answer,
+        source: "database",
+      });
     }
 
-    // 2️⃣ Staff-curated knowledge
-    const staffAnswer = await checkForAnswer(question);
-    if (staffAnswer) {
-      return new Response(
-        JSON.stringify({
-          response: staffAnswer,
-          source: "clinical_knowledge",
-        }),
-        { status: 200 }
-      );
-    }
-
-    // 3️⃣ OpenRouter LLM fallback (FREE / multi-provider)
+    // 2️⃣ OpenRouter AI fallback
     const completion = await openRouter.chat.send({
-      model: "openai/gpt-3.5-turbo", 
-      // You can also try:
-      // "meta-llama/llama-3-8b-instruct"
-      // "mistralai/mistral-7b-instruct"
-
+      model: "openai/gpt-3.5-turbo",
       messages: [
         {
           role: "system",
           content:
-            "You are a medical decision-support assistant. Provide safe, non-diagnostic, informational responses only. Do not prescribe medication or give definitive diagnoses.",
+            "You are a medical assistant. Do not give a diagnosis. Provide safe, general medical guidance and suggest consulting a professional when appropriate.",
         },
         {
           role: "user",
           content: question,
         },
       ],
-      stream: false,
     });
 
     const answer = completion.choices[0]?.message?.content;
 
     if (!answer) {
-      throw new Error("Empty response from OpenRouter");
+      throw new Error("Empty response from AI");
     }
 
-    return new Response(
-      JSON.stringify({
-        response: answer,
-        source: "openrouter_llm",
-      }),
-      { status: 200 }
-    );
-  } catch (error) {
-    console.error("Error in chat route:", error);
-    return new Response(
-      JSON.stringify({
+    return NextResponse.json({
+      response: answer,
+      source: "openrouter",
+    });
+  } catch (error: any) {
+    console.error("Chat API error:", error);
+
+    return NextResponse.json(
+      {
         error: "Failed to process request",
-      }),
+        details: error.message ?? "Unknown error",
+      },
       { status: 500 }
     );
   }
