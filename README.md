@@ -22,7 +22,7 @@ We combined the latest tech to create something special:
 * Built a lightning-fast interface with Next.js 15 and React 19
 * Made sure everything's rock-solid with TypeScript
 * Created a beautiful, easy-to-use design with Tailwind CSS
-* Added smart health insights using Google's AI
+* Added smart health insights using OpenRouter's ChatGPT API
 * Kept your data safe and secure with Supabase
 * Made sure everyone can use it with accessible UI components
 
